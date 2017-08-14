@@ -19,10 +19,11 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{B4BD31E0-1A76-4A08-AECB-621D82DF5208}</ProjectGuid>
+    <ProjectGuid>{D65BF31A-E16C-43B5-B343-5FC74541D365}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>CascadeFaceDetection</RootNamespace>
-    <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
+    <WindowsTargetPlatformVersion>10.0.10586.0</WindowsTargetPlatformVersion>
+    <ProjectName>MatMTCNN</ProjectName>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'" Label="Configuration">
@@ -79,7 +80,7 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <TargetExt>.pyd</TargetExt>
+    <TargetExt>.mexw64</TargetExt>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -92,6 +93,7 @@
     <Link>
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <ModuleDefinitionFile>Source.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
@@ -108,6 +110,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>D:\project\faceinception\CoreLibrary\x64\Release;D:\Anaconda2\libs;D:\Anaconda2\Lib\site-packages\numpy\core\lib;D:\deeplearning\mscaffe\windows\thirdparty\OpenCV\x64\vc14\lib;D:\ThirdPartyLibrary\boost_1_62_0\lib64-msvc-14.0</AdditionalLibraryDirectories>
       <AdditionalDependencies>opencv_world310d.lib;D:\deepLearning\mscaffe\Build\x64\Release\caffe.binding.lib;python27.lib;npymath.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <ModuleDefinitionFile>Source.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -125,6 +128,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
+      <ModuleDefinitionFile>Source.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -134,9 +138,9 @@
       <Optimization>MaxSpeed</Optimization>
       <FunctionLevelLinking>true</FunctionLevelLinking>
       <IntrinsicFunctions>true</IntrinsicFunctions>
-      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;CASCADEFACEDETECTION_EXPORTS;BOOST_PYTHON_STATIC_LIB;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_WINDOWS;_USRDLL;CASCADEFACEDETECTION_EXPORTS;MATLAB_MEX_FILE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <SDLCheck>true</SDLCheck>
-      <AdditionalIncludeDirectories>D:\deepLearning\mscaffe\windows\caffe.binding;D:\Anaconda2\include;D:\Anaconda2\Lib\site-packages\numpy\core\include;D:\deeplearning\mscaffe\windows\thirdparty\OpenCV\include;D:\ThirdPartyLibrary\boost_1_62_0</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>C:\Program Files\MATLAB\R2016a\extern\include;D:\deepLearning\mscaffe\windows\caffe.binding;D:\deeplearning\mscaffe\windows\thirdparty\OpenCV\include;D:\deeplearning\mscaffe\windows\thirdparty\Boost</AdditionalIncludeDirectories>
       <OpenMPSupport>true</OpenMPSupport>
     </ClCompile>
     <Link>
@@ -144,21 +148,19 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
-      <AdditionalDependencies>opencv_world310.lib;D:\deepLearning\mscaffe\Build\x64\Release\caffe.binding.lib;python27.lib;npymath.lib;%(AdditionalDependencies)</AdditionalDependencies>
-      <AdditionalLibraryDirectories>D:\project\faceinception\CoreLibrary\x64\Release;D:\Anaconda2\libs;D:\Anaconda2\Lib\site-packages\numpy\core\lib;D:\deeplearning\mscaffe\windows\thirdparty\OpenCV\x64\vc14\lib;D:\ThirdPartyLibrary\boost_1_62_0\lib64-msvc-14.0</AdditionalLibraryDirectories>
+      <AdditionalDependencies>opencv_world310.lib;D:\deepLearning\mscaffe\Build\x64\Release\caffe.binding.lib;libmx.lib;libmex.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>D:\project\faceinception\CoreLibrary\x64\Release;C:\Program Files\MATLAB\R2016a\extern\lib\win64\microsoft;D:\deeplearning\mscaffe\windows\thirdparty\OpenCV\x64\vc14\lib;D:\deeplearning\mscaffe\windows\thirdparty\Boost\lib64-msvc-14.0</AdditionalLibraryDirectories>
+      <ModuleDefinitionFile>Source.def</ModuleDefinitionFile>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="CascadeFaceDetection.h" />
-    <ClInclude Include="pyboostcvconverter.hpp" />
+    <ClCompile Include="MatMTCNN.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CascadeFaceDetection.cpp" />
-    <ClCompile Include="pyboost_cv3_converter.cpp" />
-    <ClCompile Include="python_module.cpp" />
+    <None Include="Source.def" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

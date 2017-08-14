@@ -36,7 +36,7 @@ int CaptureDemo(CascadeCNN cascade) {
     vector<vector<Point2d>> points;
     std::chrono::time_point<std::chrono::system_clock> p0 = std::chrono::system_clock::now();
     double min_face_size = 40;
-    auto result = cascade.GetDetection(frame, 12 / min_face_size, 0.7, true, 0.7, true, points);
+    auto result = cascade.GetDetection(frame, 12 / min_face_size, { 0.6, 0.7, 0.7 }, true, 0.7, true, points);
     std::chrono::time_point<std::chrono::system_clock> p1 = std::chrono::system_clock::now();
     cout << "detection time:" << (float)std::chrono::duration_cast<std::chrono::microseconds>(p1 - p0).count() / 1000 << "ms" << endl;
     for (int i = 0; i < result.size(); i++) {
@@ -68,7 +68,7 @@ void ScanList(string root_folder, CascadeCNN cascade) {
     try {
       Mat image = imread(filename);
       vector<vector<Point2d>> points;
-      auto result = cascade.GetDetection(image, 1, 0.995, true, 0.3, true, points);
+      auto result = cascade.GetDetection(image, 1, { 0.6, 0.7, 0.995 }, true, 0.3, true, points);
       for (int i = 0; i < result.size(); i++) {
         rectangle(image, result[i].first, Scalar(255, 0, 0), 4);
         for (int p = 0; p < 5; p++) {
@@ -98,7 +98,7 @@ void TestFDDBPrecision(CascadeCNN& cascade, string fddb_folder = "G:\\FDDB\\", b
     strcpy(last_filename, image_filename);
     Mat image = imread(fddb_folder + image_filename + ".jpg");
     vector <vector<Point2d>> points;
-    auto result = cascade.GetDetection(image, 12.0 / 12.0, 0.7, true, 0.7, show, points);
+    auto result = cascade.GetDetection(image, 12.0 / 12.0, { 0.6, 0.7, 0.7 }, true, 0.7, show, points);
     if (save) {
       fprintf(fpout, "%s\n", image_filename);
       fprintf(fpout, "%d\n", result.size());
@@ -170,10 +170,15 @@ int main(int argc, char* argv[])
                      0);
   //CaptureDemo(cascade);
 
-  double min_face_size = 24;
+  double min_face_size = 20;
 
   //ScanList("H:\\lfw\\list.txt", cascade);
-  Mat image = imread("D:\\face project\\images\\08.jpg");
+  Mat image = imread("D:\\face project\\images\\test.jpg");
+  std::vector<std::pair<Rect, double>> location_and_scale;
+  Mat stitch_image = getPyramidStitchingImage2(image, location_and_scale);
+  resize(stitch_image, stitch_image, Size(0, 0), 0.25, 0.25);
+  imwrite("stitch_image.png", stitch_image);
+  resize(image, image, Size(640, 480));
   
   //Mat image = imread("G:\\WIDER\\face_detection\\pack\\1[00_00_26][20160819-181452-0].BMP");
   //Mat image = imread("D:\\face project\\FDDB\\2002/07/25/big/img_1047.jpg");
@@ -182,16 +187,19 @@ int main(int argc, char* argv[])
   cout << image.cols<<","<<image.rows << endl;
   vector<vector<Point2d>> points;
   std::chrono::time_point<std::chrono::system_clock> p0 = std::chrono::system_clock::now();
-  auto result = cascade.GetDetection(image, 12.0 / min_face_size, 0.7, true, 0.7, true, points);
+  auto result = cascade.GetDetection(image, 12.0 / min_face_size, { 0.6, 0.7, 0.7 }, true, 0.7, true, points);
+  points.clear();//The first run is slow because it need to allocate memory.
+  result = cascade.GetDetection(image, 12.0 / min_face_size, { 0.6, 0.7, 0.7 }, true, 0.7, true, points);
   std::chrono::time_point<std::chrono::system_clock> p1 = std::chrono::system_clock::now();
   cout << "detection time:" << (float)std::chrono::duration_cast<std::chrono::microseconds>(p1 - p0).count() / 1000 << "ms" << endl;
 
   cout << "===========================================================" << endl;
   points.clear();//The first run is slow because it need to allocate memory.
   p0 = std::chrono::system_clock::now();
-  result = cascade.GetDetection(image, 12.0 / min_face_size, 0.7, true, 0.7, true, points);
+  result = cascade.GetDetection(image, 12.0 / min_face_size, { 0.6, 0.7, 0.7 }, true, 0.7, true, points);
   p1 = std::chrono::system_clock::now();
   cout << "detection time:" << (float)std::chrono::duration_cast<std::chrono::microseconds>(p1 - p0).count() / 1000 << "ms" << endl;
+  cout << "detected " << result.size() << " faces" << endl;
 
   for (int i = 0; i < result.size(); i++) {
     //cout << "face box:" << result[i].first << " confidence:" << result[i].second << endl;

@@ -66,7 +66,7 @@ namespace FaceInception {
     std::vector<FaceInformation> result;
     vector<vector<Point2d>> points;
     if (cascade != NULL) {
-      auto rect_and_score = cascade->GetDetection(input_image, 12.0 / min_face, min_confidence, true, 0.7, true, points);
+      auto rect_and_score = cascade->GetDetection(input_image, 12.0 / min_face, { 0.6, 0.7, min_confidence }, true, 0.7, true, points);
       for (int i = 0; i < rect_and_score.size();i++) {
         result.push_back(FaceInformation{ rect_and_score[i].first, rect_and_score[i].second, points[i] });
       }
@@ -92,11 +92,11 @@ namespace FaceInception {
   PyObject* CascadeFaceDetection::ForceGetLandmark(PyObject* input, PyObject * CoarseRect) {
     Mat input_image;
     ERRWRAP2(input_image = FaceInception::fromNDArrayToMat(input));
-    Rect2d r;
+    cv::Rect2d r;
     PyArg_ParseTuple(CoarseRect, "dddd", &r.x, &r.y, &r.width, &r.height);
     cout << r << endl;
     vector<vector<Point2d>> points;
-    auto rect_and_score = cascade->ForceGetLandmark(input_image, r, points);
+    auto rect_and_score = cascade->ForceGetLandmark(input_image, r, 0.7, points);
     vector<FaceInformation> result;
     for (int i = 0; i < rect_and_score.size(); i++) {
       result.push_back(FaceInformation{ rect_and_score[i].first, rect_and_score[i].second, points[i] });
