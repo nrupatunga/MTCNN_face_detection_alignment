@@ -209,11 +209,11 @@ static void Detect(MEX_ARGS) {
         score_data[i] = rect_and_score[i].second;
       }
 
-      int points_data_num = points.size() * 2;
+      int points_data_num = points[0].size() * 2;
       mxArray* mx_points = mxCreateDoubleMatrix(result_size, points_data_num, mxREAL);
       double* points_data = (double *)mxGetData(mx_points);
       for (int i = 0; i < result_size; i++) {
-        for (int j = 0; j < points.size(); j++) {
+        for (int j = 0; j < points[i].size(); j++) {
           points_data[j * 2 * result_size + i] = points[i][j].x;
           points_data[(j * 2 + 1) * result_size + i] = points[i][j].y;
         }
@@ -273,11 +273,11 @@ static void ForceDetect(MEX_ARGS) {
         score_data[i] = rect_and_score[i].second;
       }
 
-      int points_data_num = points.size() * 2;
+      int points_data_num = points[0].size() * 2;
       mxArray* mx_points = mxCreateDoubleMatrix(result_size, points_data_num, mxREAL);
       double* points_data = (double *)mxGetData(mx_points);
       for (int i = 0; i < result_size; i++) {
-        for (int j = 0; j < points.size(); j++) {
+        for (int j = 0; j < points[i].size(); j++) {
           points_data[j * 2 * result_size + i] = points[i][j].x;
           points_data[(j * 2 + 1) * result_size + i] = points[i][j].y;
         }
