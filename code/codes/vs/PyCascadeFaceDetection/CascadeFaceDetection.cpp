@@ -62,11 +62,11 @@ namespace FaceInception {
                              gpu_id);
   }
 
-  std::vector<FaceInformation> CascadeFaceDetection::Predict(cv::Mat& input_image, double min_confidence, double min_face) {
+  std::vector<FaceInformation> CascadeFaceDetection::Predict(cv::Mat& input_image, vector<double> thresholds, double min_face) {
     std::vector<FaceInformation> result;
     vector<vector<Point2d>> points;
     if (cascade != NULL) {
-      auto rect_and_score = cascade->GetDetection(input_image, 12.0 / min_face, { 0.6, 0.7, min_confidence }, true, 0.7, true, points);
+      auto rect_and_score = cascade->GetDetection(input_image, 12.0 / min_face, thresholds, true, 0.7, true, points);
       for (int i = 0; i < rect_and_score.size();i++) {
         result.push_back(FaceInformation{ rect_and_score[i].first, rect_and_score[i].second, points[i] });
       }
@@ -77,15 +77,17 @@ namespace FaceInception {
   PyObject * CascadeFaceDetection::Predict(PyObject * input) {
     Mat input_image = FaceInception::fromNDArrayToMat(input);
     if (!input_image.data) return nullptr;
-    auto faces = Predict(input_image);
+    auto faces = Predict(input_image, { 0.6, 0.6, 0.7 });
     return pyopencv_from_face_info_vec(faces);
   }
 
-  PyObject * CascadeFaceDetection::Predict(PyObject * input, PyObject * min_confidence, PyObject * min_face) {
+  PyObject * CascadeFaceDetection::Predict(PyObject * input, PyObject * confidence_threshold, PyObject * min_face) {
     Mat input_image;
     ERRWRAP2(input_image = FaceInception::fromNDArrayToMat(input));
-    if (!input_image.data || !PyFloat_CheckExact(min_confidence) || !PyFloat_Check(min_face)) return nullptr;
-    auto faces = Predict(input_image, PyFloat_AsDouble(min_confidence), PyFloat_AsDouble(min_face));
+    if (!input_image.data || !PyFloat_Check(min_face)) return nullptr;
+    vector<double> thesholds(3);
+    PyArg_ParseTuple(confidence_threshold, "dddd", &thesholds[0], &thesholds[1], &thesholds[2]);
+    auto faces = Predict(input_image, thesholds, PyFloat_AsDouble(min_face));
     return pyopencv_from_face_info_vec(faces);
   }
 
