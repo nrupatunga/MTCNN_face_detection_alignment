@@ -181,48 +181,129 @@ void SetThreshold(MEX_ARGS) {
 
 static void Detect(MEX_ARGS) {
   mxCHECK(nrhs == 2 && mxIsUint8(prhs[0]) && mxIsDouble(prhs[1]),
-          "Usage: MatMTCNN('Detect', image, min_face)");
+          "Usage: MatMTCNN('detect', image, min_face)");
   ReadMat(prhs[0]);
   //mexPrintf("Read Mat to OpenCV done.\n");
   double min_face = mxGetScalar(prhs[1]);
   if (cascade != NULL) {
     vector<vector<Point2d>> points;
+    //std::chrono::time_point<std::chrono::system_clock> p0 = std::chrono::system_clock::now();
     auto rect_and_score = cascade->GetDetection(image, 12.0 / min_face, confidence_threshold, true, 0.7, true, points);
+    //std::chrono::time_point<std::chrono::system_clock> p1 = std::chrono::system_clock::now();
+    //mexPrintf("get %d faces in %f ms\n", result_size, (float)std::chrono::duration_cast<std::chrono::microseconds>(p1 - p0).count() / 1000);
     int result_size = rect_and_score.size();
     
-    mxArray* mx_bounding_box = mxCreateDoubleMatrix(result_size, 4, mxREAL);
-    double* bounding_box_data = (double *)mxGetData(mx_bounding_box);
-    for (int i = 0; i < result_size; i++) {
-      bounding_box_data[i] = rect_and_score[i].first.x;
-      bounding_box_data[1 * result_size + i] = rect_and_score[i].first.y;
-      bounding_box_data[2 * result_size + i] = rect_and_score[i].first.width;
-      bounding_box_data[3 * result_size + i] = rect_and_score[i].first.height;
-    }
-
-    mxArray* mx_score = mxCreateDoubleMatrix(result_size, 1, mxREAL);
-    double* score_data = (double *)mxGetData(mx_score);
-    for (int i = 0; i < result_size; i++) {
-      score_data[i] = rect_and_score[i].second;
-    }
-
-    int points_data_num = points.size() * 2;
-    mxArray* mx_points = mxCreateDoubleMatrix(result_size, points_data_num, mxREAL);
-    double* points_data = (double *)mxGetData(mx_points);
-    for (int i = 0; i < result_size; i++) {
-      for (int j = 0; j < points.size(); j++) {
-        points_data[j * 2 * result_size + i] = points[i][j].x;
-        points_data[(j * 2 + 1) * result_size + i] = points[i][j].y;
+    if (result_size > 0) {
+      mxArray* mx_bounding_box = mxCreateDoubleMatrix(result_size, 4, mxREAL);
+      double* bounding_box_data = (double *)mxGetData(mx_bounding_box);
+      for (int i = 0; i < result_size; i++) {
+        bounding_box_data[i] = rect_and_score[i].first.x;
+        bounding_box_data[1 * result_size + i] = rect_and_score[i].first.y;
+        bounding_box_data[2 * result_size + i] = rect_and_score[i].first.width;
+        bounding_box_data[3 * result_size + i] = rect_and_score[i].first.height;
       }
-      
-    }
 
-    const char* result_fields[3] = { "bounding_box", "score", "points" };
-    mxArray* mx_result = mxCreateStructMatrix(1, 1, 3,
-                                                  result_fields);
-    mxSetField(mx_result, 0, "bounding_box", mx_bounding_box);
-    mxSetField(mx_result, 0, "score", mx_score);
-    mxSetField(mx_result, 0, "points", mx_points);
-    plhs[0] = mx_result;
+      mxArray* mx_score = mxCreateDoubleMatrix(result_size, 1, mxREAL);
+      double* score_data = (double *)mxGetData(mx_score);
+      for (int i = 0; i < result_size; i++) {
+        score_data[i] = rect_and_score[i].second;
+      }
+
+      int points_data_num = points.size() * 2;
+      mxArray* mx_points = mxCreateDoubleMatrix(result_size, points_data_num, mxREAL);
+      double* points_data = (double *)mxGetData(mx_points);
+      for (int i = 0; i < result_size; i++) {
+        for (int j = 0; j < points.size(); j++) {
+          points_data[j * 2 * result_size + i] = points[i][j].x;
+          points_data[(j * 2 + 1) * result_size + i] = points[i][j].y;
+        }
+
+      }
+
+      const char* result_fields[3] = { "bounding_box", "score", "points" };
+      mxArray* mx_result = mxCreateStructMatrix(1, 1, 3,
+                                                result_fields);
+      mxSetField(mx_result, 0, "bounding_box", mx_bounding_box);
+      mxSetField(mx_result, 0, "score", mx_score);
+      mxSetField(mx_result, 0, "points", mx_points);
+      plhs[0] = mx_result;
+    }
+    else {
+      const char* result_fields[3] = { "bounding_box", "score", "points" };
+      mxArray* mx_result = mxCreateStructMatrix(1, 1, 3,
+                                                result_fields);
+      mxArray* mx_bounding_box = mxCreateDoubleMatrix(0, 0, mxREAL);
+      mxArray* mx_score = mxCreateDoubleMatrix(0, 0, mxREAL);
+      mxArray* mx_points = mxCreateDoubleMatrix(0, 0, mxREAL);
+      mxSetField(mx_result, 0, "bounding_box", mx_bounding_box);
+      mxSetField(mx_result, 0, "score", mx_score);
+      mxSetField(mx_result, 0, "points", mx_points);
+      plhs[0] = mx_result;
+    }
+  }
+  else {
+    mxERROR("Please call MatMTCNN(\"init_model\", model_path) first!");
+  }
+}
+
+static void ForceDetect(MEX_ARGS) {
+  mxCHECK(nrhs == 2 && mxIsUint8(prhs[0]) && mxIsDouble(prhs[1]),
+          "Usage: MatMTCNN('force_detect', image, min_face)");
+  ReadMat(prhs[0]);
+  //mexPrintf("Read Mat to OpenCV done.\n");
+  double* rect_data = static_cast<double*>(mxGetData(prhs[1]));
+  cv::Rect2d coarse_rect(rect_data[0], rect_data[1], rect_data[2], rect_data[3]);
+  if (cascade != NULL) {
+    vector<vector<Point2d>> points;
+    auto rect_and_score = cascade->ForceGetLandmark(image, coarse_rect, 0.7, points);
+    int result_size = rect_and_score.size();
+    if (result_size > 0) {
+      mxArray* mx_bounding_box = mxCreateDoubleMatrix(result_size, 4, mxREAL);
+      double* bounding_box_data = (double *)mxGetData(mx_bounding_box);
+      for (int i = 0; i < result_size; i++) {
+        bounding_box_data[i] = rect_and_score[i].first.x;
+        bounding_box_data[1 * result_size + i] = rect_and_score[i].first.y;
+        bounding_box_data[2 * result_size + i] = rect_and_score[i].first.width;
+        bounding_box_data[3 * result_size + i] = rect_and_score[i].first.height;
+      }
+
+      mxArray* mx_score = mxCreateDoubleMatrix(result_size, 1, mxREAL);
+      double* score_data = (double *)mxGetData(mx_score);
+      for (int i = 0; i < result_size; i++) {
+        score_data[i] = rect_and_score[i].second;
+      }
+
+      int points_data_num = points.size() * 2;
+      mxArray* mx_points = mxCreateDoubleMatrix(result_size, points_data_num, mxREAL);
+      double* points_data = (double *)mxGetData(mx_points);
+      for (int i = 0; i < result_size; i++) {
+        for (int j = 0; j < points.size(); j++) {
+          points_data[j * 2 * result_size + i] = points[i][j].x;
+          points_data[(j * 2 + 1) * result_size + i] = points[i][j].y;
+        }
+
+      }
+
+      const char* result_fields[3] = { "bounding_box", "score", "points" };
+      mxArray* mx_result = mxCreateStructMatrix(1, 1, 3,
+                                                result_fields);
+      mxSetField(mx_result, 0, "bounding_box", mx_bounding_box);
+      mxSetField(mx_result, 0, "score", mx_score);
+      mxSetField(mx_result, 0, "points", mx_points);
+      plhs[0] = mx_result;
+    }
+    else {
+      const char* result_fields[3] = { "bounding_box", "score", "points" };
+      mxArray* mx_result = mxCreateStructMatrix(1, 1, 3,
+                                                result_fields);
+      mxArray* mx_bounding_box = mxCreateDoubleMatrix(0, 0, mxREAL);
+      mxArray* mx_score = mxCreateDoubleMatrix(0, 0, mxREAL);
+      mxArray* mx_points = mxCreateDoubleMatrix(0, 0, mxREAL);
+      mxSetField(mx_result, 0, "bounding_box", mx_bounding_box);
+      mxSetField(mx_result, 0, "score", mx_score);
+      mxSetField(mx_result, 0, "points", mx_points);
+      plhs[0] = mx_result;
+    }
   }
   else {
     mxERROR("Please call MatMTCNN(\"init_model\", model_path) first!");
@@ -244,6 +325,7 @@ static handler_registry handlers[] = {
   { "set_threshold",      SetThreshold },
   { "detect",             Detect },
   { "set_device",         set_device },
+  { "force_detect",      ForceDetect },
   // The end.
   { "END",                NULL },
 };
