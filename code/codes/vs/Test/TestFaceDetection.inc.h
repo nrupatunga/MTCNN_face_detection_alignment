@@ -414,7 +414,7 @@ namespace FaceInception {
                                              bool output_points = false, vector<vector<Point2d>>& points = vector<vector<Point2d>>()) {
       Mat clone_image = input_image.clone();//for drawing
       //std::chrono::time_point<std::chrono::system_clock> p0 = std::chrono::system_clock::now();
-      auto proposal = getNet12ProposalAcc(clone_image, confidence_threshold[0], start_scale, do_nms, nms_threshold);
+      auto proposal = getNet12Proposal(clone_image, confidence_threshold[0], start_scale, do_nms, nms_threshold);
       //std::chrono::time_point<std::chrono::system_clock> p1 = std::chrono::system_clock::now();
       //cout << "proposal time:" << (float)std::chrono::duration_cast<std::chrono::microseconds>(p1 - p0).count() / 1000 << "ms" << endl;
       cout << "proposal: " << proposal.size() << endl;
