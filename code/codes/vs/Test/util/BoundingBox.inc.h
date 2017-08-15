@@ -340,7 +340,7 @@ namespace FaceInception {
     IoU_MAX
   };
 
-  std::vector<int> nms_max(std::vector<std::pair<Rect2d, float>>& rects, double overlap, IoU_TYPE type = IoU_UNION) {
+  std::vector<int> nms_max(std::vector<std::pair<Rect2d, float>>& rects, double overlap, double min_confidence, IoU_TYPE type = IoU_UNION) {
     const int n = rects.size();
     std::vector<double> areas(n);
 
@@ -396,6 +396,110 @@ namespace FaceInception {
         }
         
         if (ov > overlap) {
+          ScoreMapper::iterator tmp = it;
+          tmp++;
+          map.erase(it);
+          it = tmp;
+        }
+        else {
+          it++;
+        }
+      }
+    }
+
+    picked.resize(picked_n);
+    return picked;
+  }
+
+  enum WEIGHT_TYPE {
+    WEIGHT_LINEAR,
+    WEIGHT_GAUSSIAN,
+    WEIGHT_ORIGINAL
+  };
+
+  std::vector<int> soft_nms_max(std::vector<std::pair<Rect2d, float>>& rects, double overlap, double min_confidence, IoU_TYPE iou_type = IoU_UNION, WEIGHT_TYPE weight_type = WEIGHT_LINEAR) {
+    const int n = rects.size();
+    std::vector<double> areas(n);
+
+    typedef std::multimap<double, int> ScoreMapper;
+    ScoreMapper map;
+    for (int i = 0; i < n; i++) {
+      map.insert(ScoreMapper::value_type(rects[i].second, i));
+      areas[i] = rects[i].first.width*rects[i].first.height;
+    }
+
+    int picked_n = 0;
+    std::vector<int> picked(n);
+    while (map.size() != 0) {
+      auto last_item = map.rbegin();
+      int last = map.rbegin()->second; // get the index of maximum score value
+                                       //std::cout << map.rbegin()->first << " " << last << std::endl;
+      picked[picked_n] = last;
+      picked_n++;
+
+      for (ScoreMapper::iterator it = map.begin(); it != map.end();) {
+        int idx = it->second;
+        if (idx == last) {
+          ScoreMapper::iterator tmp = it;
+          tmp++;
+          map.erase(it);
+          it = tmp;
+          continue;
+        }
+        double x1 = std::max<double>(rects[idx].first.x, rects[last].first.x);
+        double x2 = std::min<double>(rects[idx].first.x + rects[idx].first.width, rects[last].first.x + rects[last].first.width);
+        double w = x2 - x1;
+        if (w <= 0) {
+          it++; continue;
+        }
+        double y1 = std::max<double>(rects[idx].first.y, rects[last].first.y);
+        double y2 = std::min<double>(rects[idx].first.y + rects[idx].first.height, rects[last].first.y + rects[last].first.height);
+        double h = y2 - y1;
+        if (h <= 0) {
+          it++; continue;
+        }
+        double ov;
+        switch (iou_type) {
+        case IoU_MAX:
+          ov = w*h / max(areas[idx], areas[last]);
+          break;
+        case IoU_MIN:
+          ov = w*h / min(areas[idx], areas[last]);
+          break;
+        case IoU_UNION:
+        default:
+          ov = w*h / (areas[idx] + areas[last] - w*h);
+          break;
+        }
+
+        double weight = 1.0;
+
+        switch (weight_type) {
+        case WEIGHT_LINEAR:
+          if (ov > overlap) {
+            weight = 1.0 - ov;
+          }
+          else {
+            weight = 1.0;
+          }
+          break;
+        case WEIGHT_GAUSSIAN:
+          weight = exp((-ov*ov) / 0.5);
+          break;
+        default:
+        case WEIGHT_ORIGINAL:
+          if (ov > overlap) {
+            weight = 0.0;
+          }
+          else {
+            weight = 1.0;
+          }
+          break;
+        }
+
+        rects[idx].second *= weight;
+
+        if (rects[idx].second < min_confidence) {
           ScoreMapper::iterator tmp = it;
           tmp++;
           map.erase(it);

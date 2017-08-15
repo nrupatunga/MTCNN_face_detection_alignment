@@ -84,7 +84,7 @@ namespace FaceInception {
             before_nms.push_back(make_pair(this_rect, net12output["bounding_box"].data[i * 5 + 4]));
           }
           if (do_nms && before_nms.size() > 1) {
-            vector<int> picked = nms_max(before_nms, 0.5);
+            vector<int> picked = soft_nms_max(before_nms, 0.5, min_confidence);
             for (auto p : picked) {
               accumulate_rects.push_back(before_nms[p]);
             }
@@ -143,7 +143,7 @@ namespace FaceInception {
 
       if (do_nms) {
         //std::chrono::time_point<std::chrono::system_clock> p1 = std::chrono::system_clock::now();
-        vector<int> picked = nms_max(accumulate_rects, nms_threshold); 
+        vector<int> picked = soft_nms_max(accumulate_rects, nms_threshold, min_confidence); 
         for (auto& p : picked) {
           //make_rect_square(rect_for_test[p].first);
           result.push_back(accumulate_rects[p]);
@@ -211,7 +211,7 @@ namespace FaceInception {
             before_nms.push_back(make_pair(this_rect, net12output["bounding_box"].data[i * 5 + 4]));
           }
           if (do_nms && before_nms.size() > 1) {
-            vector<int> picked = nms_max(before_nms, 0.5);
+            vector<int> picked = soft_nms_max(before_nms, 0.5, min_confidence);
             for (auto p : picked) {
               //cout << before_nms[p].first << " " << before_nms[p].second << endl;
               sub_rects[s].push_back(before_nms[p]);
@@ -233,7 +233,7 @@ namespace FaceInception {
       vector<pair<Rect2d, float>> result;
       if (do_nms) {
         //std::chrono::time_point<std::chrono::system_clock> p1 = std::chrono::system_clock::now();
-        vector<int> picked = nms_max(accumulate_rects, nms_threshold);
+        vector<int> picked = soft_nms_max(accumulate_rects, nms_threshold, min_confidence);
         for (auto& p : picked) {
           //make_rect_square(rect_for_test[p].first);
           result.push_back(accumulate_rects[p]);
@@ -300,7 +300,7 @@ namespace FaceInception {
 
       if (do_nms) {
         //std::chrono::time_point<std::chrono::system_clock> p1 = std::chrono::system_clock::now();
-        vector<int> picked = nms_max(rect_and_scores, nms_threshold);
+        vector<int> picked = soft_nms_max(rect_and_scores, nms_threshold, min_confidence);
         for (auto& p : picked) {
           result.push_back(rect_and_scores[p]);
           //if (output_points) points.push_back(allPoints[p]);
@@ -354,7 +354,7 @@ namespace FaceInception {
       vector<pair<Rect2d, float>> result;
       if (do_nms) {
         //std::chrono::time_point<std::chrono::system_clock> p1 = std::chrono::system_clock::now();
-        vector<int> picked = nms_max(rect_and_scores, nms_threshold, IoU_MIN);
+        vector<int> picked = soft_nms_max(rect_and_scores, nms_threshold, min_confidence, IoU_MIN);
         for (auto& p : picked) {
           result.push_back(rect_and_scores[p]);
           if (output_points) points.push_back(allPoints[p]);
@@ -414,10 +414,10 @@ namespace FaceInception {
                                              bool output_points = false, vector<vector<Point2d>>& points = vector<vector<Point2d>>()) {
       Mat clone_image = input_image.clone();//for drawing
       //std::chrono::time_point<std::chrono::system_clock> p0 = std::chrono::system_clock::now();
-      auto proposal = getNet12Proposal(clone_image, confidence_threshold[0], start_scale, do_nms, nms_threshold);
+      auto proposal = getNet12ProposalAcc(clone_image, confidence_threshold[0], start_scale, do_nms, nms_threshold);
       //std::chrono::time_point<std::chrono::system_clock> p1 = std::chrono::system_clock::now();
       //cout << "proposal time:" << (float)std::chrono::duration_cast<std::chrono::microseconds>(p1 - p0).count() / 1000 << "ms" << endl;
-      //cout << "proposal: " << proposal.size() << endl;
+      cout << "proposal: " << proposal.size() << endl;
       if (proposal.size() == 0) return vector<pair<Rect2d, float>>();
       vector<Mat> sub_images;
       sub_images.reserve(proposal.size());
@@ -436,7 +436,7 @@ namespace FaceInception {
       auto refined = getNet24Refined(sub_images, image_boxes, confidence_threshold[1], do_nms, nms_threshold, 500);
       std::chrono::time_point<std::chrono::system_clock> p3 = std::chrono::system_clock::now();
       //cout << "refine time:" << (float)std::chrono::duration_cast<std::chrono::microseconds>(p3 - p2).count() / 1000 << "ms" << endl;
-      //cout << "refined: " << refined.size() << endl;
+      cout << "refined: " << refined.size() << endl;
       if (refined.size() == 0) return vector<pair<Rect2d, float>>();
       //Mat image_show = input_image.clone();
       //for (auto& rect : refined) {
@@ -462,7 +462,7 @@ namespace FaceInception {
       auto final = getNet48Final(sub_images48, image_boxes48, confidence_threshold[2], do_nms, nms_threshold, 500, output_points, points);
       //std::chrono::time_point<std::chrono::system_clock> p4 = std::chrono::system_clock::now();
       //cout << "final time:" << (float)std::chrono::duration_cast<std::chrono::microseconds>(p4 - p3).count() / 1000 << "ms" << endl;
-      //cout << "final: " << final.size() << endl;
+      cout << "final: " << final.size() << endl;
       std::chrono::time_point<std::chrono::system_clock> p5 = std::chrono::system_clock::now();
       if (output_points && final.size() > 0) {
         GetFineLandmark(input_image, points, final);
