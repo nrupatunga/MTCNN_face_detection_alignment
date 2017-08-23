@@ -248,7 +248,7 @@ static void Detect(MEX_ARGS) {
 
 static void ForceDetect(MEX_ARGS) {
   mxCHECK(nrhs == 2 && mxIsUint8(prhs[0]) && mxIsDouble(prhs[1]),
-          "Usage: MatMTCNN('force_detect', image, min_face)");
+          "Usage: MatMTCNN('force_detect', image, coarse_rect)");
   ReadMat(prhs[0]);
   //mexPrintf("Read Mat to OpenCV done.\n");
   double* rect_data = static_cast<double*>(mxGetData(prhs[1]));

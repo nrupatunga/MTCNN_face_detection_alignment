@@ -168,17 +168,19 @@ int main(int argc, char* argv[])
                      model_folder + "det3-memory.prototxt", model_folder + "det3.caffemodel",
                      model_folder + "det4-memory.prototxt", model_folder + "det4.caffemodel",
                      0);
+  vector<Point2d> target_points = { {30.2946,51.6963},{65.5318,51.5014},{48.0252,71.7366},{33.5493,92.3655},{62.7299,92.2041} };
   //CaptureDemo(cascade);
 
-  double min_face_size = 20;
+  double min_face_size = 40;
 
   //ScanList("H:\\lfw\\list.txt", cascade);
   Mat image = imread("D:\\face project\\images\\test.jpg");
+  //Mat image = imread("C:\\lena.png");
   std::vector<std::pair<Rect, double>> location_and_scale;
   Mat stitch_image = getPyramidStitchingImage2(image, location_and_scale);
   resize(stitch_image, stitch_image, Size(0, 0), 0.25, 0.25);
   imwrite("stitch_image.png", stitch_image);
-  resize(image, image, Size(640, 480));
+  //resize(image, image, Size(640, 480));
   
   //Mat image = imread("G:\\WIDER\\face_detection\\pack\\1[00_00_26][20160819-181452-0].BMP");
   //Mat image = imread("D:\\face project\\FDDB\\2002/07/25/big/img_1047.jpg");
@@ -201,19 +203,31 @@ int main(int argc, char* argv[])
   cout << "detection time:" << (float)std::chrono::duration_cast<std::chrono::microseconds>(p1 - p0).count() / 1000 << "ms" << endl;
   cout << "detected " << result.size() << " faces" << endl;
 
+  Mat show_image = image.clone();
+  vector<Mat> croppedImages;
   for (int i = 0; i < result.size(); i++) {
     //cout << "face box:" << result[i].first << " confidence:" << result[i].second << endl;
-    rectangle(image, result[i].first, Scalar(255, 0, 0), 2);
+    //rectangle(show_image, result[i].first, Scalar(255, 0, 0), 2);
     if (points.size() >= i + 1) {
       for (int p = 0; p < 5; p++) {
-        circle(image, points[i][p], 2, Scalar(0, 255, 255), -1);
+        circle(show_image, points[i][p], 2, Scalar(0, 255, 255), -1);
       }
+      Mat trans_inv;
+      Mat trans = findSimilarityTransform(points[i], target_points, trans_inv);
+      Mat cropImage;
+      warpAffine(image, cropImage, trans, Size(96, 112));
+      //imshow("cropImage", cropImage);
+      croppedImages.push_back(cropImage);
+      vector<Point2d> rotatedVertex;
+      transform(getVertexFromBox(Rect(0,0,96,112)), rotatedVertex, trans_inv);
+      for (int i = 0; i < 4; i++)
+        line(show_image, rotatedVertex[i], rotatedVertex[(i + 1) % 4], Scalar(0, 255, 0), 2);
     }
   }
-  while (image.cols > 1000) {
-    resize(image, image, Size(0, 0), 0.75, 0.75);
+  while (show_image.cols > 1000) {
+    resize(show_image, show_image, Size(0, 0), 0.75, 0.75);
   }
-  imshow("final", image);
+  imshow("final", show_image);
   waitKey(0);
   //imwrite("output.jpg", image);
   //TestFDDBPrecision(cascade, "D:\\face project\\FDDB\\", true, true);
