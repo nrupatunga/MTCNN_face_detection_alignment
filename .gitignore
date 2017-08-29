@@ -101,7 +101,6 @@ MANIFEST-*
 *.opensdf
 *.pdb
 *.props
-*.def
 *.lib
 matlab/+caffe/+test/
 *.exp
