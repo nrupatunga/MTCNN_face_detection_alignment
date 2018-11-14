@@ -792,6 +792,7 @@ namespace FaceInception {
     swap(source_point_reflect[3], source_point_reflect[4]);
     Mat trans2 = findNonReflectiveTransform(source_point_reflect, target_points, Tinv2);
     trans2.colRange(0,1) *= -1;
+    Tinv2.rowRange(0, 1) *= -1;
     std::vector<Point2d> trans_points1, trans_points2;
     transform(source_points, trans_points1, trans1);
     transform(source_points, trans_points2, trans2);
